@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/setup-sam@v2
+      - run: sam validate
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: aws-actions/setup-sam@v2
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - run: sam build
+      - run: sam deploy --stack-name autocontent-pro --no-confirm-changeset --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+      - name: Seed parameters
+        run: python infra/seed-params.py
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+      - name: Export stack outputs
+        run: aws cloudformation describe-stacks --stack-name autocontent-pro --region ${{ secrets.AWS_REGION }} --query 'Stacks[0].Outputs' > outputs.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stack-outputs
+          path: outputs.json
+      - name: Summary
+        run: cat outputs.json >> $GITHUB_STEP_SUMMARY
