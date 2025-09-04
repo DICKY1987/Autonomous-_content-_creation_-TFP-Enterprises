@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 # Import existing systems
-from automated_content_system import AutomatedContentSystem, ContentConfig
+from content_system import AutomatedContentSystem, ContentConfig
 from upload_system import MultiPlatformUploader
 from enhanced_content_system import EnhancedContentResearchEngine
 
