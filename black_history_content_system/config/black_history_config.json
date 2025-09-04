@@ -1,0 +1,10 @@
+{
+  "production_settings": {
+    "video_length": 45,
+    "daily_video_target": 3
+  },
+  "content_standards": {
+    "historical_accuracy_threshold": 0.95,
+    "sensitivity_review": true
+  }
+}

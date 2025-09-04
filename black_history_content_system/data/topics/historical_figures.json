@@ -1,0 +1,172 @@
+{
+  "freedom_fighters": [
+    {
+      "name": "Harriet Tubman",
+      "birth_year": 1822,
+      "death_year": 1913,
+      "primary_achievement": "Underground Railroad Conductor",
+      "key_facts": [
+        "Led over 300 enslaved people to freedom",
+        "Never lost a single person on Underground Railroad missions",
+        "Served as spy for Union Army during Civil War",
+        "Founded home for elderly African Americans"
+      ],
+      "search_terms": ["Harriet Tubman", "Underground Railroad", "Moses", "Araminta Ross"],
+      "content_angle": "The woman who never lost a passenger",
+      "educational_value": "high",
+      "sensitivity_notes": "Handle with respect, avoid oversimplification"
+    },
+    {
+      "name": "Frederick Douglass",
+      "birth_year": 1818,
+      "death_year": 1895,
+      "primary_achievement": "Abolitionist, Orator, Writer",
+      "key_facts": [
+        "Self-taught to read and write while enslaved",
+        "Published three autobiographies",
+        "Advised President Lincoln during Civil War",
+        "First African American nominated for Vice President"
+      ],
+      "search_terms": ["Frederick Douglass", "abolitionist", "orator", "Narrative"],
+      "content_angle": "From slavery to presidential advisor",
+      "educational_value": "high",
+      "sensitivity_notes": "Emphasize intellectual achievements and dignity"
+    },
+    {
+      "name": "Sojourner Truth",
+      "birth_year": 1797,
+      "death_year": 1883,
+      "primary_achievement": "Abolitionist and Women's Rights Activist",
+      "key_facts": [
+        "Born Isabella Baumfree in New York slavery",
+        "Escaped slavery with infant daughter",
+        "Famous 'Ain't I a Woman?' speech",
+        "Recruited Black troops for Union Army"
+      ],
+      "search_terms": ["Sojourner Truth", "Isabella Baumfree", "women's rights", "abolitionist"],
+      "content_angle": "The voice that couldn't be silenced",
+      "educational_value": "high",
+      "sensitivity_notes": "Highlight intersectionality of race and gender struggles"
+    }
+  ],
+  "underground_railroad": [
+    {
+      "name": "William Still",
+      "birth_year": 1821,
+      "death_year": 1902,
+      "primary_achievement": "Underground Railroad Stationmaster",
+      "key_facts": [
+        "Helped over 800 enslaved people escape",
+        "Kept detailed records of Underground Railroad operations",
+        "Published 'The Underground Rail Road' in 1872",
+        "Called the 'Father of the Underground Railroad'"
+      ],
+      "search_terms": ["William Still", "Underground Railroad", "stationmaster", "Philadelphia"],
+      "content_angle": "The record keeper who preserved history",
+      "educational_value": "high",
+      "sensitivity_notes": "Emphasize documentation and historical preservation"
+    },
+    {
+      "name": "Levi Coffin",
+      "birth_year": 1798,
+      "death_year": 1877,
+      "primary_achievement": "Underground Railroad Conductor",
+      "key_facts": [
+        "Quaker who helped over 3,000 enslaved people",
+        "Called 'President of the Underground Railroad'",
+        "Worked with both white and Black conductors",
+        "Continued activism after Civil War"
+      ],
+      "search_terms": ["Levi Coffin", "Underground Railroad", "Quaker", "Indiana"],
+      "content_angle": "The white ally who risked everything",
+      "educational_value": "high",
+      "sensitivity_notes": "Show interracial cooperation while centering Black agency"
+    }
+  ],
+  "intellectuals_writers": [
+    {
+      "name": "Phillis Wheatley",
+      "birth_year": 1753,
+      "death_year": 1784,
+      "primary_achievement": "First Published African American Poet",
+      "key_facts": [
+        "Kidnapped from West Africa as child",
+        "Learned to read and write English, Latin, and Greek",
+        "Published 'Poems on Various Subjects' in 1773",
+        "Corresponded with George Washington"
+      ],
+      "search_terms": ["Phillis Wheatley", "poet", "Africa", "Boston"],
+      "content_angle": "The genius who proved Black intellectual equality",
+      "educational_value": "high",
+      "sensitivity_notes": "Address both achievement and tragedy of enslavement"
+    },
+    {
+      "name": "David Walker",
+      "birth_year": 1796,
+      "death_year": 1830,
+      "primary_achievement": "Abolitionist Writer and Activist",
+      "key_facts": [
+        "Wrote 'Walker's Appeal' in 1829",
+        "Called for immediate end to slavery",
+        "First Black American to advocate for armed resistance",
+        "Influenced later abolitionists like Frederick Douglass"
+      ],
+      "search_terms": ["David Walker", "Walker's Appeal", "abolitionist", "Boston"],
+      "content_angle": "The radical voice that sparked a movement",
+      "educational_value": "high",
+      "sensitivity_notes": "Handle discussion of resistance with historical context"
+    }
+  ],
+  "religious_leaders": [
+    {
+      "name": "Richard Allen",
+      "birth_year": 1760,
+      "death_year": 1831,
+      "primary_achievement": "Founder of African Methodist Episcopal Church",
+      "key_facts": [
+        "Born into slavery, purchased his freedom",
+        "Founded first independent Black denomination",
+        "Established schools and mutual aid societies",
+        "Consecrated as first AME bishop"
+      ],
+      "search_terms": ["Richard Allen", "AME Church", "Methodist", "Philadelphia"],
+      "content_angle": "The minister who built a movement",
+      "educational_value": "high",
+      "sensitivity_notes": "Highlight community building and institutional development"
+    }
+  ],
+  "inventors_innovators": [
+    {
+      "name": "Benjamin Banneker",
+      "birth_year": 1731,
+      "death_year": 1806,
+      "primary_achievement": "Mathematician, Astronomer, Inventor",
+      "key_facts": [
+        "Self-taught mathematician and astronomer",
+        "Helped survey Washington D.C.",
+        "Published almanacs with astronomical calculations",
+        "Wrote to Thomas Jefferson about racial equality"
+      ],
+      "search_terms": ["Benjamin Banneker", "astronomer", "mathematician", "almanac"],
+      "content_angle": "The scientist who challenged Jefferson",
+      "educational_value": "high",
+      "sensitivity_notes": "Emphasize intellectual contributions and challenges to racism"
+    },
+    {
+      "name": "Norbert Rillieux",
+      "birth_year": 1806,
+      "death_year": 1894,
+      "primary_achievement": "Inventor of Sugar Refining Process",
+      "key_facts": [
+        "Born free in New Orleans to white father and enslaved mother",
+        "Invented multiple-effect evaporator for sugar",
+        "Revolutionized sugar industry worldwide",
+        "Studied engineering in Paris"
+      ],
+      "search_terms": ["Norbert Rillieux", "inventor", "sugar", "engineer"],
+      "content_angle": "The genius who sweetened the world",
+      "educational_value": "high",
+      "sensitivity_notes": "Address complex racial identity and international education"
+    }
+  ]
+}
