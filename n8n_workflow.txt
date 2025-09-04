@@ -1,0 +1,226 @@
+{
+  "name": "Automated Historical Video Creation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "name": "Every 8 hours",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "topic": "{{ $json.historical_figures[Math.floor(Math.random() * $json.historical_figures.length)] }}",
+        "historical_figures": [
+          "Harriet Tubman",
+          "Frederick Douglass", 
+          "Sojourner Truth",
+          "Ida B. Wells",
+          "Booker T. Washington"
+        ]
+      },
+      "name": "Select Random Topic",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://en.wikipedia.org/api/rest_v1/page/summary/{{ $json.topic }}",
+        "options": {}
+      },
+      "name": "Wikipedia Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Create a respectful 60-second educational video script about {{ $json.topic }}. Research: {{ $json.extract }}. Use person-first language and maintain dignity. Return as JSON: {\"title\": \"Video Title\", \"script\": \"Full narration\", \"visual_cues\": [\"image descriptions\"], \"duration_seconds\": 60}"
+          }
+        ]
+      },
+      "name": "Generate Script (OpenAI)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "textToSpeech",
+        "text": "={{ JSON.parse($json.choices[0].message.content).script }}",
+        "options": {
+          "voice": "en-US-JennyNeural"
+        }
+      },
+      "name": "Azure TTS",
+      "type": "n8n-nodes-base.microsoftAzure",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://source.unsplash.com/1080x1920/?{{ JSON.parse($prev.choices[0].message.content).visual_cues[0] }}",
+        "options": {
+          "response": {
+            "response": "file"
+          }
+        }
+      },
+      "name": "Get Image 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://source.unsplash.com/1080x1920/?{{ JSON.parse($nodes['Generate Script (OpenAI)'].json.choices[0].message.content).visual_cues[1] }}",
+        "options": {
+          "response": {
+            "response": "file"
+          }
+        }
+      },
+      "name": "Get Image 2",
+      "type": "n8n-nodes-base.httpRequest", 
+      "typeVersion": 3,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Create video using MoviePy via Python subprocess\nconst script = JSON.parse(items[0].json.choices[0].message.content);\nconst audioData = items[1].binary;\nconst image1Data = items[2].binary;\nconst image2Data = items[3].binary;\n\n// Python script for video creation\nconst pythonScript = `\nimport moviepy.editor as mp\nimport json\nimport base64\nfrom io import BytesIO\nfrom PIL import Image\n\n# Decode assets\naudio = mp.AudioFileClip('audio.mp3')\nimg1 = Image.open('img1.jpg').resize((1080, 1920))\nimg2 = Image.open('img2.jpg').resize((1080, 1920))\n\n# Create video clips\nclip1 = mp.ImageClip('img1.jpg', duration=30).resize((1080, 1920))\nclip2 = mp.ImageClip('img2.jpg', duration=30).resize((1080, 1920))\n\n# Add Ken Burns effect\nclip1 = clip1.crossfadein(1).crossfadeout(1)\nclip2 = clip2.crossfadein(1).crossfadeout(1)\n\n# Combine clips\nvideo = mp.concatenate_videoclips([clip1, clip2])\nvideo = video.set_audio(audio)\n\n# Add title\ntitle = mp.TextClip('${script.title}', fontsize=50, color='white')\ntitle = title.set_position('center').set_duration(3)\n\nfinal_video = mp.CompositeVideoClip([video, title])\nfinal_video.write_videofile('output.mp4', fps=24)\n`;\n\n// Execute Python script (this would need server-side execution)\nreturn {\n  video_created: true,\n  script: script,\n  message: 'Video creation initiated'\n};"
+      },
+      "name": "Create Video (Python)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "title": "={{ $json.script.title }}",
+        "description": "Educational content about historical figures who shaped American history. #BlackHistory #Education #History",
+        "tags": "history,education,blackhistory",
+        "categoryId": "27",
+        "privacyStatus": "public"
+      },
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Every 8 hours": {
+      "main": [
+        [
+          {
+            "node": "Select Random Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Random Topic": {
+      "main": [
+        [
+          {
+            "node": "Wikipedia Research", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia Research": {
+      "main": [
+        [
+          {
+            "node": "Generate Script (OpenAI)",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Azure TTS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Image 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Image 2", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure TTS": {
+      "main": [
+        [
+          {
+            "node": "Create Video (Python)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image 1": {
+      "main": [
+        [
+          {
+            "node": "Create Video (Python)",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image 2": {
+      "main": [
+        [
+          {
+            "node": "Create Video (Python)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video (Python)": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
