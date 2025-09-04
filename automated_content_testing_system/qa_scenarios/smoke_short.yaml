@@ -1,0 +1,13 @@
+suite: smoke_short
+description: Minimal smoke test for content generation without uploads.
+config:
+  topic: "The Great Wall of China"
+  duration: 20
+expectations:
+  facts_min: 1
+  video_must_exist: true
+  approve_required: false
+steps:
+  - action: create_content
+    module: automated_content_system
+    expect_keys: ["output_path", "script", "content_data", "qa_report", "project_root"]

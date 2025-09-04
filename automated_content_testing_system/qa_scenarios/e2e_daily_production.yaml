@@ -1,0 +1,9 @@
+suite: e2e_daily_production
+description: End-to-end test using the system's daily production orchestration in safe mode (no real uploads).
+config:
+  daily_video_target: 2
+  allow_uploads: false
+expectations:
+  created_min: 1
+  approved_min: 1
+  db_updated: true

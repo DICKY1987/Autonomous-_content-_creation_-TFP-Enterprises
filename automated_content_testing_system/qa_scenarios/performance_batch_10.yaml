@@ -1,0 +1,17 @@
+suite: performance_batch_10
+description: Run a small batch to ensure each completes under 25 minutes.
+config:
+  topics:
+    - "Ancient Rome"
+    - "Photosynthesis"
+    - "DNA Structure"
+    - "Black Holes"
+    - "Ocean Life"
+    - "Renaissance Art"
+    - "Blockchain Explained"
+    - "Artificial Intelligence"
+    - "Amazon Rainforest"
+    - "Climate Change"
+  duration: 25
+thresholds:
+  per_video_minutes_max: 25

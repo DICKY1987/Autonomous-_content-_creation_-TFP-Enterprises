@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --maxfail=1 --disable-warnings"
+testpaths = ["tests"]
+filterwarnings = [
+  "ignore::DeprecationWarning"
+]

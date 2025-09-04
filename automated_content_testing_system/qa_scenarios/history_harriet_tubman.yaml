@@ -1,0 +1,12 @@
+suite: history_harriet_tubman
+description: Validate respectful language and QA approval for a sensitive topic.
+config:
+  topic: "Harriet Tubman"
+  duration: 30
+expectations:
+  qa_overall_min: 0.90
+  language_respectful: true
+steps:
+  - action: create_content
+    module: automated_content_system
+    expect_keys: ["qa_report"]
