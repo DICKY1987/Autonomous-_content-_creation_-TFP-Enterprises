@@ -22,14 +22,14 @@ import hashlib
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Callable
 from dataclasses import dataclass
 
 # Core libraries
 import requests
 import wikipediaapi
 from gtts import gTTS
-from moviepy.editor import *
+from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip, vfx
 from PIL import Image
 import tempfile
 
@@ -49,7 +49,14 @@ class RedundancyManager:
         self.retries = retries
         self.delay = delay
 
-    def run(self, func, *args, fallback=None, **kwargs):
+    def run(
+        self,
+        func: Callable,
+        *args,
+        fallback: Optional[Callable] = None,
+        **kwargs,
+    ):
+        """Execute ``func`` with retries and optional fallback."""
         for attempt in range(1, self.retries + 1):
             try:
                 return func(*args, **kwargs)
@@ -62,7 +69,9 @@ class RedundancyManager:
         if fallback:
             logger.info(f"Executing fallback for {func.__name__}")
             return fallback(*args, **kwargs)
-        raise RuntimeError(f"{func.__name__} failed after {self.retries} attempts")
+        raise RuntimeError(
+            f"{func.__name__} failed after {self.retries} attempts"
+        )
 
 @dataclass
 class ContentConfig:
@@ -633,13 +642,19 @@ class AutomatedContentSystem:
         return " ".join(script_parts)
 
     def run_continuous(self, topics: List[str], delay: float = 5.0) -> None:
-        """Continuously process topics so the engine never stops"""
-        while True:
-            for topic in topics:
-                success, _ = self.create_content(topic)
-                if not success:
-                    logger.warning(f"Content creation failed for {topic}")
-                time.sleep(delay)
+        """Continuously process topics so the engine never stops.
+
+        The loop can be interrupted with ``Ctrl+C``.
+        """
+        try:
+            while True:
+                for topic in topics:
+                    success, _ = self.create_content(topic)
+                    if not success:
+                        logger.warning(f"Content creation failed for {topic}")
+                    time.sleep(delay)
+        except KeyboardInterrupt:
+            logger.info("Continuous content generation stopped by user")
 
 # Example usage
 if __name__ == "__main__":
