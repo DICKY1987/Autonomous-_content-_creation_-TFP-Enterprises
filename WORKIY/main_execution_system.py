@@ -17,7 +17,7 @@ import logging
 from scripts.historical_research_engine import HistoricalResearchEngine
 from scripts.historical_script_generator import HistoricalScriptGenerator
 from scripts.historical_qa_system import HistoricalQualityAssurance
-from automated_content_system import AutomatedContentSystem, ContentConfig
+from content_system import AutomatedContentSystem, ContentConfig
 from upload_system import MultiPlatformUploader
 
 class HistoricalContentBusinessSystem:
