@@ -36,7 +36,7 @@ ffmpeg -version || echo "Install FFmpeg: https://ffmpeg.org/download.html"
 4. Save the script generator as `scripts/historical_script_generator.py`
 5. Save the QA system as `scripts/historical_qa_system.py`
 6. Save the main system as `main_historical_content_system.py`
-7. Copy the original `automated_content_system.py` and `upload_system.py` to the project root
+7. Copy the original `content_system.py` and `upload_system.py` to the project root
 
 ### Step 3: Configuration Setup
 Create `.env` file:
