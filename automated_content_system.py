@@ -41,6 +41,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+class RedundancyManager:
+    """Simple retry manager to keep the pipeline running"""
+
+    def __init__(self, retries: int = 3, delay: float = 5.0):
+        self.retries = retries
+        self.delay = delay
+
+    def run(self, func, *args, fallback=None, **kwargs):
+        for attempt in range(1, self.retries + 1):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(
+                    f"Attempt {attempt} failed for {func.__name__}: {e}"
+                )
+                if attempt < self.retries:
+                    time.sleep(self.delay)
+        if fallback:
+            logger.info(f"Executing fallback for {func.__name__}")
+            return fallback(*args, **kwargs)
+        raise RuntimeError(f"{func.__name__} failed after {self.retries} attempts")
+
 @dataclass
 class ContentConfig:
     """Configuration for content generation"""
@@ -469,6 +492,7 @@ class AutomatedContentSystem:
         self.voice_synthesizer = VoiceSynthesizer()
         self.video_engine = VideoAssemblyEngine(config)
         self.qa_module = QualityAssurance()
+        self.redundancy = RedundancyManager()
         
         # Create project structure
         self.project_root = Path(f"content_project_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -489,57 +513,80 @@ class AutomatedContentSystem:
         logger.info(f"Starting content creation for topic: {topic}")
         
         try:
-            # Step 1: Research topic
+            # Step 1: Research topic with retry
             logger.info("Step 1: Researching topic...")
-            content_data = self.research_engine.research_topic(topic)
-            
+            content_data = self.redundancy.run(
+                self.research_engine.research_topic, topic
+            )
+
             if "error" in content_data:
                 return False, {"error": f"Research failed: {content_data['error']}"}
-            
+
             # Step 2: Generate script from facts
             logger.info("Step 2: Generating script...")
             script = self._generate_script(content_data)
-            
+
             with open(self.project_root / 'script' / 'script.txt', 'w') as f:
                 f.write(script)
-            
-            # Step 3: Get images
+
+            # Step 3: Get images with retry
             logger.info("Step 3: Sourcing images...")
-            image_urls = self.image_manager.get_images_for_topic(content_data.get('images', [topic]))
-            
+
+            def fetch_images():
+                urls = self.image_manager.get_images_for_topic(
+                    content_data.get('images', [topic])
+                )
+                if not urls:
+                    raise RuntimeError("No images retrieved")
+                return urls
+
+            image_urls = self.redundancy.run(fetch_images)
+
             image_paths = []
             for i, url in enumerate(image_urls):
                 img_path = self.project_root / 'media' / f'scene{i+1}.jpg'
                 if self.image_manager.download_image(url, str(img_path)):
                     image_paths.append(str(img_path))
-            
+
             if not image_paths:
                 return False, {"error": "Failed to download images"}
-            
-            # Step 4: Generate voiceover
+
+            # Step 4: Generate voiceover with retry
             logger.info("Step 4: Generating voiceover...")
             voice_path = self.project_root / 'audio' / 'voiceover.wav'
-            
-            if not self.voice_synthesizer.generate_voiceover(script, str(voice_path)):
-                return False, {"error": "Voice synthesis failed"}
-            
-            # Step 5: Quality assurance
+
+            def synthesize_voice():
+                if not self.voice_synthesizer.generate_voiceover(script, str(voice_path)):
+                    raise RuntimeError("Voice synthesis failed")
+                return True
+
+            self.redundancy.run(synthesize_voice)
+
+            # Step 5: Quality assurance with retry
             logger.info("Step 5: Quality assurance...")
-            qa_report = self.qa_module.verify_content(content_data, script)
-            
+            qa_report = self.redundancy.run(
+                self.qa_module.verify_content, content_data, script
+            )
+
             with open(self.project_root / 'qa' / 'facts_report.json', 'w') as f:
                 json.dump({
                     "avg_conf": qa_report.facts_confidence,
                     "claims": qa_report.claims,
                     "issues": qa_report.issues
                 }, f, indent=2)
-            
-            # Step 6: Assemble video
+
+            # Step 6: Assemble video with retry
             logger.info("Step 6: Assembling video...")
             output_path = self.project_root / 'build' / 'final_short.mp4'
-            
-            if not self.video_engine.create_video(script, image_paths, str(voice_path), str(output_path)):
-                return False, {"error": "Video assembly failed"}
+
+            def assemble_video():
+                if not self.video_engine.create_video(
+                    script, image_paths, str(voice_path), str(output_path)
+                ):
+                    raise RuntimeError("Video assembly failed")
+                return True
+
+            self.redundancy.run(assemble_video)
             
             # Success!
             result = {
@@ -582,8 +629,17 @@ class AutomatedContentSystem:
         
         # Add call-to-action
         script_parts.append("Like and follow for more amazing facts!")
-        
+
         return " ".join(script_parts)
+
+    def run_continuous(self, topics: List[str], delay: float = 5.0) -> None:
+        """Continuously process topics so the engine never stops"""
+        while True:
+            for topic in topics:
+                success, _ = self.create_content(topic)
+                if not success:
+                    logger.warning(f"Content creation failed for {topic}")
+                time.sleep(delay)
 
 # Example usage
 if __name__ == "__main__":
