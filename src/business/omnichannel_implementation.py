@@ -18,9 +18,9 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 # Import existing systems
-from content_system import AutomatedContentSystem, ContentConfig
-from upload_system import MultiPlatformUploader
-from enhanced_content_system import EnhancedContentResearchEngine
+from src.core.content_system import AutomatedContentSystem, ContentConfig
+from src.platforms.upload_system import MultiPlatformUploader
+from src.core.enhanced_content_system import EnhancedContentResearchEngine
 
 logger = logging.getLogger(__name__)
 

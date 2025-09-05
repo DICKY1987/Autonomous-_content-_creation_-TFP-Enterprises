@@ -23,10 +23,10 @@ import logging
 
 # Import our custom modules (these would be the files we created above)
 try:
-    from content_system import AutomatedContentSystem, ContentConfig
-    from upload_system import MultiPlatformUploader
+    from src.core.content_system import AutomatedContentSystem, ContentConfig
+    from src.platforms.upload_system import MultiPlatformUploader
 except ImportError:
-    print("⚠️ Please save the content_system.py and upload_system.py files first!")
+    print("⚠️ Please save the src/core/content_system.py and src/platforms/upload_system.py files first!")
     print("Then run: pip install moviepy wikipedia-api requests gtts pydub pillow google-api-python-client")
     exit(1)
 

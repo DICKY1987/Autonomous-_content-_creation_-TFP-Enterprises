@@ -17,8 +17,8 @@ import logging
 from scripts.historical_research_engine import HistoricalResearchEngine
 from scripts.historical_script_generator import HistoricalScriptGenerator
 from scripts.historical_qa_system import HistoricalQualityAssurance
-from content_system import AutomatedContentSystem, ContentConfig
-from upload_system import MultiPlatformUploader
+from src.core.content_system import AutomatedContentSystem, ContentConfig
+from src.platforms.upload_system import MultiPlatformUploader
 
 class HistoricalContentBusinessSystem:
     """Complete system for creating historical educational content"""

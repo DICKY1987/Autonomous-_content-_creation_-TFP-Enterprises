@@ -11,7 +11,7 @@ def _import_or_exit(module_name, hint):
         sys.exit(2)
 
 def run_smoke(step, cfg):
-    mod = _import_or_exit("automated_content_system", "Ensure automated_content_system.py is in PYTHONPATH")
+    mod = _import_or_exit("src.core.automated_content_system", "Ensure src/core/automated_content_system.py is in PYTHONPATH")
     ContentConfig = getattr(mod, "ContentConfig")
     AutomatedContentSystem = getattr(mod, "AutomatedContentSystem")
     config = ContentConfig(topic=cfg.topic or "Test Topic", duration=float(cfg.duration or 20))

@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.timeout(20)
 def test_research_to_script_flow(monkeypatch):
-    acs = importlib.import_module("automated_content_system")
+    acs = importlib.import_module("src.core.automated_content_system")
     research = acs.ContentResearchEngine()
     data = {
         "title": "Test",

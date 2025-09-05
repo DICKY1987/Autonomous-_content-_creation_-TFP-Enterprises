@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.timeout(20)
 def test_video_assembly_path_exists(monkeypatch):
-    acs = importlib.import_module("automated_content_system")
+    acs = importlib.import_module("src.core.automated_content_system")
     cfg = acs.ContentConfig(topic="Y", duration=5.0)
     sys = acs.AutomatedContentSystem(cfg, pexels_api_key=None)
 

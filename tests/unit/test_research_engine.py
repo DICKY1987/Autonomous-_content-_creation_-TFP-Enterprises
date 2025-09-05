@@ -2,12 +2,12 @@ import importlib
 import pytest
 
 def test_research_engine_basic_import():
-    mod = importlib.import_module("automated_content_system")
+    mod = importlib.import_module("src.core.automated_content_system")
     assert hasattr(mod, "ContentResearchEngine")
 
 @pytest.mark.timeout(10)
 def test_extracts_some_facts(monkeypatch):
-    mod = importlib.import_module("automated_content_system")
+    mod = importlib.import_module("src.core.automated_content_system")
     Engine = getattr(mod, "ContentResearchEngine")
     e = Engine()
 

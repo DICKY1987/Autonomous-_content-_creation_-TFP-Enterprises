@@ -2,12 +2,12 @@ import importlib
 import pytest
 
 def test_automated_content_system_imports():
-    m = importlib.import_module("automated_content_system")
+    m = importlib.import_module("src.core.automated_content_system")
     assert hasattr(m, "AutomatedContentSystem") and hasattr(m, "ContentConfig")
 
 @pytest.mark.timeout(10)
 def test_create_content_smoke(monkeypatch):
-    m = importlib.import_module("automated_content_system")
+    m = importlib.import_module("src.core.automated_content_system")
     ContentConfig = getattr(m, "ContentConfig")
     System = getattr(m, "AutomatedContentSystem")
 
