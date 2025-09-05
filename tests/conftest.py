@@ -1,7 +1,13 @@
 import os
 import pathlib
+import sys
 import pytest
 from contextlib import contextmanager
+
+# Ensure project root is importable when tests run from this directory
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 @pytest.fixture(autouse=True, scope="session")
 def _set_env():

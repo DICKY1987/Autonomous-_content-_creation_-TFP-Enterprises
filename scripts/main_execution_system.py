@@ -1,36 +1,50 @@
 from __future__ import annotations
-"""Minimal entry point exposing ``HistoricalContentBusinessSystem`` for tests."""
+"""Entry point exposing ``HistoricalContentBusinessSystem`` for tests."""
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Dict, Any, List
 
-
-@dataclass
-class _Uploader:
-    """Very small uploader used by the business system."""
-    def upload_to_all_platforms(self, **kwargs):  # pragma: no cover - monkeypatched in tests
-        return []
+from src.core.automated_content_system import AutomatedContentSystem, ContentConfig
+from src.platforms.upload_system import MultiPlatformUploader
 
 
 @dataclass
 class HistoricalContentBusinessSystem:
-    """Stub orchestration class used in end‑to‑end tests.
+    """Light‑weight orchestrator used in tests.
 
-    The real project coordinates research, generation and uploading.  The test
-    suite only needs a configurable object with a ``run_daily_production`` method
-    that returns a dictionary containing the current date.
+    The implementation coordinates the simplified ``AutomatedContentSystem`` and
+    ``MultiPlatformUploader`` modules so that integration tests exercise a real
+    production flow without hitting external services.
     """
 
-    config: Dict[str, Any] = field(default_factory=lambda: {
-        "production_settings": {"daily_video_target": 3}
-    })
-    uploader: _Uploader = field(default_factory=_Uploader)
+    config: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "production_settings": {"daily_video_target": 1},
+            "topics": ["History"],
+        }
+    )
+    uploader: MultiPlatformUploader = field(default_factory=MultiPlatformUploader)
 
     def run_daily_production(self) -> Dict[str, Any]:
-        videos: List[str] = []
         target = self.config["production_settings"].get("daily_video_target", 0)
-        for i in range(target):  # pragma: no cover - trivial loop
-            videos.append(f"video_{i}")
+        topics = self.config.get("topics", [])
+        videos: List[str] = []
+
+        for topic in topics[:target]:
+            system = AutomatedContentSystem(ContentConfig(topic=topic))
+            ok, result = system.create_content(topic)
+            if ok:
+                videos.append(result["output_path"])
+                # Upload is stubbed in tests and monkeypatched to avoid side effects
+                self.uploader.upload_to_all_platforms(
+                    video_path=result["output_path"],
+                    topic=topic,
+                    content_data=result["content_data"],
+                    script=result["script"],
+                    image_paths=[],
+                    output_dir=".",
+                )
+
         return {"date": date.today().isoformat(), "videos": videos}
 
 

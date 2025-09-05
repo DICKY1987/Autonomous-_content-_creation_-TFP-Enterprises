@@ -8,9 +8,10 @@ thesystem described in the repository.  External network calls and heavy
 processing are intentionally omitted so that unit and integration tests can run
 quickly and deterministically.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional, Union
 
 
 # ---------------------------------------------------------------------------
@@ -103,9 +104,18 @@ class ContentResearchEngine:
         return content
 
 
+@dataclass
+class ImageMeta:
+    """Structured metadata describing an image asset."""
+
+    url: str
+    licensed: bool = True
+
+
 class ImageManager:
-    def get_images_for_topic(self, keywords: List[str], count: int = 3) -> List[str]:
-        return [f"https://img/{i}" for i in range(count)]
+    def get_images_for_topic(self, keywords: List[str], count: int = 3) -> List[ImageMeta]:
+        """Return deterministic image metadata with license information."""
+        return [ImageMeta(url=f"https://img/{i}") for i in range(count)]
 
     def download_image(self, url: str, fp: str) -> bool:  # pragma: no cover
         return True
@@ -121,14 +131,56 @@ class VideoEngine:
         return True
 
 
+class CulturalSensitivityChecker:
+    """Very small checker that flags offensive terms in scripts.
+
+    Terms are loaded from ``cultural_terms.txt`` located alongside this module to
+    make the list easy to maintain.
+    """
+
+    TERMS_FILE = Path(__file__).with_name("cultural_terms.txt")
+    DEFAULT_TERMS = {"slave", "savages", "oriental"}
+
+    def __init__(self) -> None:
+        if self.TERMS_FILE.exists():
+            lines = self.TERMS_FILE.read_text(encoding="utf-8").splitlines()
+            self.offensive_terms = {line.strip().lower() for line in lines if line.strip()}
+        else:  # pragma: no cover - fallback when file missing
+            self.offensive_terms = set(self.DEFAULT_TERMS)
+
+    def analyze(self, text: str) -> List[str]:
+        lowered = text.lower()
+        return [term for term in self.offensive_terms if term in lowered]
+
+
 class QualityAssuranceModule:
+    def __init__(self) -> None:
+        self.cultural_checker = CulturalSensitivityChecker()
+
     def verify_content(self, content_data: Dict, script: str) -> QualityReport:
+        """Evaluate generated content for cultural and copyright issues.
+
+        Returns a :class:`QualityReport` summarizing any detected problems.
+        """
+
+        issues: List[str] = []
+        offensive = self.cultural_checker.analyze(script)
+        if offensive:
+            issues.append(f"Offensive terms found: {', '.join(offensive)}")
+
+        images = content_data.get("image_meta", [])
+        unlicensed = [img["url"] for img in images if not img.get("licensed", False)]
+        copyright_status = "cleared"
+        if unlicensed:
+            copyright_status = "uncertain"
+            issues.append("Unlicensed images detected")
+
         return QualityReport(
             facts_confidence=1.0,
-            technical_compliance=True,
-            copyright_status="cleared",
+            technical_compliance=not bool(issues),
+            copyright_status=copyright_status,
             claims=content_data.get("facts", []),
-            issues=[],
+            issues=issues,
         )
 
 
@@ -156,12 +208,18 @@ class AutomatedContentSystem:
 
         script = self._generate_script(data)
 
-        images = self.image_manager.get_images_for_topic(data.get("images", []))
-        image_paths = []
-        for i, url in enumerate(images):
+        images: List[Union[ImageMeta, str]] = self.image_manager.get_images_for_topic(
+            data.get("images", [])
+        )
+        image_paths: List[str] = []
+        image_meta_list: List[ImageMeta] = []
+        for i, img in enumerate(images):
+            meta = img if isinstance(img, ImageMeta) else ImageMeta(url=str(img))
             path = f"image_{i}.jpg"
-            self.image_manager.download_image(url, path)
+            self.image_manager.download_image(meta.url, path)
             image_paths.append(path)
+            image_meta_list.append(meta)
+        data["image_meta"] = [asdict(m) for m in image_meta_list]
 
         voice_path = "voiceover.wav"
         if not self.voice_synthesizer.generate_voiceover(script, voice_path):
@@ -198,4 +256,7 @@ __all__ = [
     "ContentConfig",
     "ContentResearchEngine",
     "QualityReport",
+    "ImageMeta",
+    "CulturalSensitivityChecker",
+    "QualityAssuranceModule",
 ]
