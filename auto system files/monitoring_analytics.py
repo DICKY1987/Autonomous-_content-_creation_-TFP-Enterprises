@@ -17,11 +17,12 @@ import numpy as np
 import sqlite3
 from contextlib import asynccontextmanager
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import requests
 import schedule
 import threading
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -315,7 +316,7 @@ class AlertManager:
             logger.error("Email configuration incomplete")
             return
         
-        msg = MimeMultipart()
+        msg = MIMEMultipart()
         msg['From'] = username
         msg['To'] = ', '.join(to_emails)
         msg['Subject'] = f"🚨 Omnichannel Alert: {alert.severity.upper()}"
@@ -330,7 +331,7 @@ class AlertManager:
         Please check the dashboard for more details.
         """
         
-        msg.attach(MimeText(body, 'plain'))
+        msg.attach(MIMEText(body, 'plain'))
         
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
@@ -806,23 +807,28 @@ class ReportGenerator:
             return data
 
 # Example monitoring configuration
+
+def _parse_env_list(var_name: str) -> List[str]:
+    """Return a list parsed from a comma-separated env var."""
+    return [item.strip() for item in os.getenv(var_name, "").split(",") if item.strip()]
+
 MONITORING_CONFIG = {
     'email': {
         'enabled': True,
         'smtp_server': 'smtp.gmail.com',
         'smtp_port': 587,
-        'username': 'your-email@gmail.com',
-        'password': 'your-app-password',
-        'alert_recipients': ['alerts@yourcompany.com']
+        'username': os.getenv('SMTP_USERNAME', ''),
+        'password': os.getenv('SMTP_PASSWORD', ''),
+        'alert_recipients': _parse_env_list('ALERT_RECIPIENTS'),
     },
     'slack': {
         'enabled': True,
-        'webhook_url': 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        'webhook_url': os.getenv('SLACK_WEBHOOK_URL', ''),
     },
     'webhook': {
         'enabled': False,
-        'url': 'https://your-webhook-endpoint.com/alerts'
-    }
+        'url': os.getenv('ALERT_WEBHOOK_URL', ''),
+    },
 }
 
 # Main monitoring system
