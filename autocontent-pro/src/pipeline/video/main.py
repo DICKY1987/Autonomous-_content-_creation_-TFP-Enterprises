@@ -1,4 +1,7 @@
-import os, uuid, boto3, tempfile, math
+import os
+import uuid
+import boto3
+import tempfile
 from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, AudioFileClip
 
 ASSETS_BUCKET = os.getenv("ASSETS_BUCKET")
