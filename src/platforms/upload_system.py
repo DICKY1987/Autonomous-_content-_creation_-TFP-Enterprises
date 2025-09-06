@@ -52,8 +52,10 @@ class ThumbnailGenerator:
         thumb_a = os.path.join(output_dir, "thumb_a.jpg")
         thumb_b = os.path.join(output_dir, "thumb_b.jpg")
         for p in (thumb_a, thumb_b):
-            with open(p, "wb"):
-                pass
+            # Create empty placeholder files so downstream code expecting image
+            # paths can operate without requiring Pillow or real image assets.
+            with open(p, "wb") as f:
+                f.write(b"")
         return thumb_a, thumb_b
 
 
