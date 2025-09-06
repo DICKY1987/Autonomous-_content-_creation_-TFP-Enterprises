@@ -406,15 +406,45 @@ class YouTubeUploader:
                 self._set_thumbnail(video_id, metadata.thumbnail_b)
             
             logger.info(f"A/B test switch completed for video {video_id}")
-            
+
         except Exception as e:
             logger.error(f"A/B test error: {str(e)}")
 
+
+class TikTokUploader:
+    """Simplified TikTok uploader placeholder."""
+
+    def upload_video(self, video_path: str, metadata: VideoMetadata) -> UploadResult:
+        try:
+            video_id = hashlib.md5(video_path.encode()).hexdigest()[:10]
+            url = f"https://www.tiktok.com/@placeholder/video/{video_id}"
+            logger.info(f"Mock TikTok upload successful: {video_id}")
+            return UploadResult("tiktok", True, video_id=video_id, url=url)
+        except Exception as e:
+            logger.error(f"TikTok upload error: {str(e)}")
+            return UploadResult("tiktok", False, error=str(e))
+
+
+class InstagramUploader:
+    """Simplified Instagram uploader placeholder."""
+
+    def upload_video(self, video_path: str, metadata: VideoMetadata) -> UploadResult:
+        try:
+            video_id = hashlib.md5(video_path.encode()).hexdigest()[:10]
+            url = f"https://www.instagram.com/p/{video_id}/"
+            logger.info(f"Mock Instagram upload successful: {video_id}")
+            return UploadResult("instagram", True, video_id=video_id, url=url)
+        except Exception as e:
+            logger.error(f"Instagram upload error: {str(e)}")
+            return UploadResult("instagram", False, error=str(e))
+
 class MultiPlatformUploader:
     """Orchestrates uploads to multiple platforms"""
-    
+
     def __init__(self):
         self.youtube_uploader = YouTubeUploader()
+        self.tiktok_uploader = TikTokUploader()
+        self.instagram_uploader = InstagramUploader()
         self.metadata_generator = MetadataGenerator()
         self.thumbnail_generator = ThumbnailGenerator()
         
@@ -441,13 +471,18 @@ class MultiPlatformUploader:
             
             # Upload to YouTube
             youtube_result = self.youtube_uploader.upload_video(
-                video_path, metadata, 
+                video_path, metadata,
                 captions_path=os.path.join(output_dir, "captions", "captions.srt")
             )
             results.append(youtube_result)
-            
-            # TODO: Add other platforms (TikTok, Instagram, etc.)
-            # Each platform would have its own uploader class
+
+            # Upload to TikTok
+            tiktok_result = self.tiktok_uploader.upload_video(video_path, metadata)
+            results.append(tiktok_result)
+
+            # Upload to Instagram
+            instagram_result = self.instagram_uploader.upload_video(video_path, metadata)
+            results.append(instagram_result)
             
             # Save upload results
             results_file = os.path.join(output_dir, "upload_results.json")
