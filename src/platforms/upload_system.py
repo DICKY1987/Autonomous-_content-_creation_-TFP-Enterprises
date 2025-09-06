@@ -59,12 +59,51 @@ class ThumbnailGenerator:
         return thumb_a, thumb_b
 
 
+class YouTubeUploader:
+    """Stub uploader for YouTube."""
+
+    def upload_video(self, video_path: str, metadata: VideoMetadata) -> UploadResult:
+        return UploadResult(
+            platform="youtube",
+            success=True,
+            video_id="YOUTUBE123",
+            url="http://example.com/youtube",
+        )
+
+
+class TikTokUploader:
+    """Stub uploader for TikTok."""
+
+    def upload_video(self, video_path: str, metadata: VideoMetadata) -> UploadResult:
+        return UploadResult(
+            platform="tiktok",
+            success=True,
+            video_id="TIKTOK123",
+            url="http://example.com/tiktok",
+        )
+
+
+class InstagramUploader:
+    """Stub uploader for Instagram."""
+
+    def upload_video(self, video_path: str, metadata: VideoMetadata) -> UploadResult:
+        return UploadResult(
+            platform="instagram",
+            success=True,
+            video_id="INSTA123",
+            url="http://example.com/instagram",
+        )
+
+
 class MultiPlatformUploader:
     """Minimal uploader that uses the metadata and thumbnail generators."""
 
     def __init__(self):
         self.metadata_generator = MetadataGenerator()
         self.thumbnail_generator = ThumbnailGenerator()
+        self.youtube_uploader = YouTubeUploader()
+        self.tiktok_uploader = TikTokUploader()
+        self.instagram_uploader = InstagramUploader()
 
     def upload_to_all_platforms(
         self,
@@ -77,8 +116,12 @@ class MultiPlatformUploader:
     ) -> List[UploadResult]:
         md = self.metadata_generator.generate_metadata(topic, content_data, script)
         self.thumbnail_generator.generate_thumbnails(topic, image_paths, output_dir)
-        # In real life we'd upload the video. For tests we just return a stub result.
-        return [UploadResult(platform="youtube", success=True, video_id="TEST123", url="http://example.com")]
+        results = [
+            self.youtube_uploader.upload_video(video_path, md),
+            self.tiktok_uploader.upload_video(video_path, md),
+            self.instagram_uploader.upload_video(video_path, md),
+        ]
+        return results
 
 
 __all__ = [
