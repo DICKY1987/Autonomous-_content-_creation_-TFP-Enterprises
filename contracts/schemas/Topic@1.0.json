@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/Topic@1.0.json",
+  "title": "Topic@1.0",
+  "description": "Shared topic data referenced by multiple services.",
+  "type": "object",
+  "required": ["id", "text"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the topic"
+    },
+    "text": {
+      "type": "string",
+      "description": "Raw topic string submitted by a user"
+    },
+    "persona": {
+      "type": "string",
+      "description": "Optional persona or audience targeting information"
+    },
+    "platforms": {
+      "type": "array",
+      "description": "Platforms the content should be produced for",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

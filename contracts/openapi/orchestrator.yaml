@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: Orchestrator API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /topics:
+    post:
+      summary: Submit a topic for processing
+      description: Accepts a topic and enqueues it for the research workflow.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topic'
+      responses:
+        '202':
+          description: Accepted and enqueued
+  /report:
+    get:
+      summary: Fetch analytics report
+      description: Retrieve aggregated analytics for a processed topic.
+      parameters:
+        - in: query
+          name: topic_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  views:
+                    type: integer
+                  likes:
+                    type: integer
+components:
+  schemas:
+    Topic:
+      $ref: '../schemas/Topic@1.0.json'

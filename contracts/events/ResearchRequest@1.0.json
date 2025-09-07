@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/events/ResearchRequest@1.0.json",
+  "title": "ResearchRequest@1.0",
+  "description": "Event requesting research for a given topic.",
+  "type": "object",
+  "required": ["id", "topic"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this request"
+    },
+    "topic": {
+      "$ref": "../schemas/Topic@1.0.json",
+      "description": "Topic to investigate"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when the request was issued"
+    }
+  },
+  "additionalProperties": false
+}

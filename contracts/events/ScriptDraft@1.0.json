@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/events/ScriptDraft@1.0.json",
+  "title": "ScriptDraft@1.0",
+  "description": "Event containing a generated script draft.",
+  "type": "object",
+  "required": ["id", "content", "source_research_id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the script draft"
+    },
+    "content": {
+      "type": "string",
+      "description": "Full text of the drafted script"
+    },
+    "source_research_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID of the research data that produced this draft"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the draft was created"
+    }
+  },
+  "additionalProperties": false
+}

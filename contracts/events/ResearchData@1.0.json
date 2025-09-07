@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/events/ResearchData@1.0.json",
+  "title": "ResearchData@1.0",
+  "description": "Event containing findings from topic research.",
+  "type": "object",
+  "required": ["id", "topic_id", "findings"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this research data set"
+    },
+    "topic_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identifier of the topic that was researched"
+    },
+    "findings": {
+      "type": "array",
+      "description": "List of key facts or data points gathered",
+      "items": {"type": "string"}
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when research was completed"
+    }
+  },
+  "additionalProperties": false
+}
