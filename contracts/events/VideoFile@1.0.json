@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tfp-enterprises.com/contracts/events/VideoFile@1.0.json",
+  "title": "VideoFile",
+  "type": "object",
+  "required": ["topic_id", "s3_key"],
+  "properties": {
+    "topic_id": {"type": "string"},
+    "s3_key": {"type": "string"}
+  }
+}
