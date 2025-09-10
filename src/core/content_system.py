@@ -22,7 +22,7 @@ import hashlib
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 
 # Core libraries
@@ -32,6 +32,7 @@ from gtts import gTTS
 from moviepy.editor import *
 from PIL import Image
 import tempfile
+import subprocess
 
 # Setup logging
 logging.basicConfig(
@@ -62,6 +63,8 @@ class QualityReport:
     copyright_status: str
     claims: List[Dict]
     issues: List[str]
+    video_metadata: Optional[Dict[str, Any]] = None
+    asset_licenses: Optional[List[Dict[str, str]]] = None
 
 class ContentResearchEngine:
     """Researches topics and extracts facts from Wikipedia and other sources"""
@@ -369,20 +372,56 @@ class VideoAssemblyEngine:
 
 class QualityAssurance:
     """Quality assurance and fact checking module"""
-    
+
     def __init__(self):
         self.min_confidence_threshold = 0.90
+
+    def _get_video_metadata(self, video_path: str) -> Dict[str, Any]:
+        """Extract basic video metadata using ffprobe if available, otherwise MoviePy."""
+        metadata: Dict[str, Any] = {}
+        if not video_path:
+            return metadata
+
+        try:
+            cmd = [
+                'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                '-show_entries', 'stream=codec_name,width,height,duration',
+                '-of', 'json', video_path
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            data = json.loads(result.stdout or '{}')
+            stream = data.get('streams', [{}])[0]
+            metadata = {
+                'width': int(stream.get('width', 0)),
+                'height': int(stream.get('height', 0)),
+                'duration': float(stream.get('duration', 0.0)),
+                'codec': stream.get('codec_name', 'unknown'),
+            }
+            return metadata
+        except Exception:
+            try:
+                clip = VideoFileClip(video_path)
+                metadata = {
+                    'width': clip.w,
+                    'height': clip.h,
+                    'duration': clip.duration,
+                    'codec': getattr(clip.reader, 'codec', 'unknown'),
+                }
+                clip.close()
+            except Exception as e:
+                logger.error(f"Video metadata extraction failed: {e}")
+        return metadata
         
     def verify_content(self, content: Dict, script: str) -> QualityReport:
         """Perform quality assurance checks"""
         try:
             # Extract claims from script
             claims = self._extract_claims(script)
-            
+
             # Verify each claim
-            verified_claims = []
+            verified_claims: List[Dict[str, Any]] = []
             total_confidence = 0.0
-            
+
             for claim in claims:
                 confidence = self._verify_claim(claim, content)
                 verified_claims.append({
@@ -391,27 +430,75 @@ class QualityAssurance:
                     "sources": [content.get("url", "")]
                 })
                 total_confidence += confidence
-            
+
             avg_confidence = total_confidence / len(claims) if claims else 0.0
-            
-            # Technical compliance check
-            tech_compliance = True  # Placeholder - would check video specs
-            
-            # Copyright status
-            copyright_status = "pass"  # Placeholder - would check asset licenses
-            
-            issues = []
+
+            issues: List[str] = []
+            tech_compliance = True
+
+            # Video metadata validation
+            video_meta: Dict[str, Any] = {}
+            video_path = content.get("video_path")
+            if video_path:
+                video_meta = self._get_video_metadata(video_path)
+                if not video_meta:
+                    issues.append("Unable to read video metadata")
+                    tech_compliance = False
+                else:
+                    if video_meta.get("width", 0) < 720 or video_meta.get("height", 0) < 1280:
+                        issues.append("Video resolution below platform requirement (720x1280)")
+                        tech_compliance = False
+                    max_duration = content.get("max_duration", 60)
+                    if video_meta.get("duration", 0) > max_duration:
+                        issues.append("Video duration exceeds platform limit")
+                        tech_compliance = False
+                    codec = video_meta.get("codec", "").lower()
+                    if codec and codec not in {"h264", "libx264", "mpeg4"}:
+                        issues.append(f"Unsupported codec: {codec}")
+                        tech_compliance = False
+            else:
+                issues.append("Video file not provided for compliance check")
+                tech_compliance = False
+
+            # License verification for assets
+            asset_licenses: List[Dict[str, str]] = []
+            license_issues: List[str] = []
+
+            for asset in content.get("image_meta", []):
+                src = asset.get("url")
+                lic = asset.get("license")
+                asset_licenses.append({"source_url": src, "license": lic})
+                if not src or not lic or lic.lower() == "unknown":
+                    license_issues.append(f"Missing license for image: {src}")
+
+            voice_meta = content.get("voice_meta")
+            if isinstance(voice_meta, dict):
+                src = voice_meta.get("source_url")
+                lic = voice_meta.get("license")
+                asset_licenses.append({"source_url": src, "license": lic})
+                if not src or not lic or lic.lower() == "unknown":
+                    license_issues.append("Missing license for voice asset")
+
+            if license_issues:
+                issues.extend(license_issues)
+
+            copyright_status = "pass" if not license_issues else "uncertain"
+            if license_issues:
+                tech_compliance = False
+
             if avg_confidence < self.min_confidence_threshold:
                 issues.append(f"Low fact confidence: {avg_confidence:.2f}")
-            
+
             return QualityReport(
                 facts_confidence=avg_confidence,
                 technical_compliance=tech_compliance,
                 copyright_status=copyright_status,
                 claims=verified_claims,
-                issues=issues
+                issues=issues,
+                video_metadata=video_meta or None,
+                asset_licenses=asset_licenses or None
             )
-            
+
         except Exception as e:
             logger.error(f"QA error: {str(e)}")
             return QualityReport(0.0, False, "error", [], [str(e)])
@@ -506,40 +593,55 @@ class AutomatedContentSystem:
             # Step 3: Get images
             logger.info("Step 3: Sourcing images...")
             image_urls = self.image_manager.get_images_for_topic(content_data.get('images', [topic]))
-            
-            image_paths = []
+
+            image_paths: List[str] = []
+            image_meta: List[Dict[str, str]] = []
             for i, url in enumerate(image_urls):
                 img_path = self.project_root / 'media' / f'scene{i+1}.jpg'
                 if self.image_manager.download_image(url, str(img_path)):
                     image_paths.append(str(img_path))
-            
+                    license_url = "https://www.pexels.com/license" if "pexels" in url else (
+                        "https://unsplash.com/license" if "unsplash" in url else "unknown")
+                    image_meta.append({"url": url, "license": license_url})
+
             if not image_paths:
                 return False, {"error": "Failed to download images"}
-            
+
             # Step 4: Generate voiceover
             logger.info("Step 4: Generating voiceover...")
             voice_path = self.project_root / 'audio' / 'voiceover.wav'
-            
+
             if not self.voice_synthesizer.generate_voiceover(script, str(voice_path)):
                 return False, {"error": "Voice synthesis failed"}
-            
-            # Step 5: Quality assurance
-            logger.info("Step 5: Quality assurance...")
+
+            voice_meta = {
+                "source_url": "https://gtts.readthedocs.io/",
+                "license": "https://github.com/pndurette/gTTS/blob/master/LICENSE"
+            }
+
+            # Step 5: Assemble video
+            logger.info("Step 5: Assembling video...")
+            output_path = self.project_root / 'build' / 'final_short.mp4'
+
+            if not self.video_engine.create_video(script, image_paths, str(voice_path), str(output_path)):
+                return False, {"error": "Video assembly failed"}
+
+            # Step 6: Quality assurance
+            logger.info("Step 6: Quality assurance...")
+            content_data.update({
+                "image_meta": image_meta,
+                "voice_meta": voice_meta,
+                "video_path": str(output_path),
+                "max_duration": self.config.duration,
+            })
             qa_report = self.qa_module.verify_content(content_data, script)
-            
+
             with open(self.project_root / 'qa' / 'facts_report.json', 'w') as f:
                 json.dump({
                     "avg_conf": qa_report.facts_confidence,
                     "claims": qa_report.claims,
                     "issues": qa_report.issues
                 }, f, indent=2)
-            
-            # Step 6: Assemble video
-            logger.info("Step 6: Assembling video...")
-            output_path = self.project_root / 'build' / 'final_short.mp4'
-            
-            if not self.video_engine.create_video(script, image_paths, str(voice_path), str(output_path)):
-                return False, {"error": "Video assembly failed"}
             
             # Success!
             result = {
