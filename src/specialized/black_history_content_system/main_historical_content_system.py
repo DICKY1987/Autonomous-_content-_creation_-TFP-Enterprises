@@ -11,7 +11,6 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
-import logging
 
 # Import our specialized modules
 from scripts.historical_research_engine import HistoricalResearchEngine
@@ -19,6 +18,7 @@ from scripts.historical_script_generator import HistoricalScriptGenerator
 from scripts.historical_qa_system import HistoricalQualityAssurance
 from src.core.content_system import AutomatedContentSystem, ContentConfig
 from src.platforms.upload_system import MultiPlatformUploader
+from src.core.logging_config import get_logger
 
 class HistoricalContentBusinessSystem:
     """Complete system for creating historical educational content"""
@@ -40,15 +40,7 @@ class HistoricalContentBusinessSystem:
     
     def setup_logging(self):
         """Setup comprehensive logging"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler('logs/historical_content.log'),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self.logger.info("Historical Content System initialized")
     
     def load_configuration(self):

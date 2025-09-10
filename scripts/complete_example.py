@@ -19,7 +19,8 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 from pathlib import Path
-import logging
+
+from src.core.logging_config import get_logger
 
 # Import our custom modules (these would be the files we created above)
 try:
@@ -136,15 +137,7 @@ class ContentBusinessManager:
     
     def setup_logging(self):
         """Set up comprehensive logging"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler('content_business.log'),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
     
     def get_daily_topics(self) -> List[Dict]:
         """Generate daily content topics based on niche strategy"""

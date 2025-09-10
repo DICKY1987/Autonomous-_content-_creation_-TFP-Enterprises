@@ -10,9 +10,10 @@ import json
 import base64
 import os
 from typing import Dict, List, Optional
+
+from src.core.logging_config import get_logger
 from dataclasses import dataclass
 from datetime import datetime
-import logging
 
 # Google APIs for YouTube
 from googleapiclient.discovery import build
@@ -21,7 +22,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @dataclass
 class UploadResult:
