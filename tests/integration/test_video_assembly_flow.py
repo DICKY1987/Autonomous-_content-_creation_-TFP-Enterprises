@@ -1,11 +1,13 @@
 import importlib
 import pytest
+from src.cloud.config_sync import load_credentials
 
 @pytest.mark.timeout(20)
 def test_video_assembly_path_exists(monkeypatch):
     acs = importlib.import_module("src.core.automated_content_system")
     cfg = acs.ContentConfig(topic="Y", duration=5.0)
-    sys = acs.AutomatedContentSystem(cfg, pexels_api_key=None)
+    creds = load_credentials(["PEXELS_API_KEY"])
+    sys = acs.AutomatedContentSystem(cfg, creds)
 
     # Mock everything heavy
     monkeypatch.setattr(sys.research_engine, "research_topic", lambda topic, **k: {

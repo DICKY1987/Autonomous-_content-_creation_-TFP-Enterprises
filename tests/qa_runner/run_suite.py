@@ -2,6 +2,7 @@
 import argparse, os, sys, time, json, pathlib, yaml
 from importlib import import_module
 from .scenario_models import Suite
+from src.cloud.config_sync import load_credentials
 
 def _import_or_exit(module_name, hint):
     try:
@@ -15,7 +16,8 @@ def run_smoke(step, cfg):
     ContentConfig = getattr(mod, "ContentConfig")
     AutomatedContentSystem = getattr(mod, "AutomatedContentSystem")
     config = ContentConfig(topic=cfg.topic or "Test Topic", duration=float(cfg.duration or 20))
-    system = AutomatedContentSystem(config)
+    creds = load_credentials(["PEXELS_API_KEY"])
+    system = AutomatedContentSystem(config, creds)
     ok, result = system.create_content(cfg.topic or "Test Topic")
     if not ok:
         raise RuntimeError(f"create_content failed: {result}")

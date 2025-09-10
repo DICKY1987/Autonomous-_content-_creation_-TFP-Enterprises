@@ -191,9 +191,10 @@ class QualityAssuranceModule:
 class AutomatedContentSystem:
     """Deterministic content pipeline suitable for tests."""
 
-    def __init__(self, config: ContentConfig, pexels_api_key: Optional[str] = None) -> None:
+    def __init__(self, config: ContentConfig, service_config: Optional[Dict[str, str]] = None) -> None:
         self.config = config
-        self.pexels_api_key = pexels_api_key
+        self.service_config = service_config or {}
+        self.pexels_api_key = self.service_config.get("PEXELS_API_KEY")
         self.research_engine = ContentResearchEngine()
         self.image_manager = ImageManager()
         self.voice_synthesizer = VoiceSynthesizer()
