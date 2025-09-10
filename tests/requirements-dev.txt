@@ -9,5 +9,7 @@ anyio>=4.4
 pydantic>=2.8
 pyyaml>=6.0
 types-PyYAML>=6.0.12
+# for retrying network operations
+tenacity>=8.2
 # for optional video and audio probing without full render
 tinytag>=1.10

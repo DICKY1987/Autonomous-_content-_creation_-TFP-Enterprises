@@ -32,6 +32,12 @@ from gtts import gTTS
 from moviepy.editor import *
 from PIL import Image
 import tempfile
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 # Setup logging
 logging.basicConfig(
@@ -40,6 +46,36 @@ logging.basicConfig(
     handlers=[logging.FileHandler('content_creation.log'), logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
+
+
+class NetworkRequestError(Exception):
+    """Raised when a network request fails after retries."""
+
+
+def _get_with_retry(
+    url: str,
+    session: Optional[requests.Session] = None,
+    **kwargs,
+) -> requests.Response:
+    """Perform HTTP GET with timeout and exponential backoff."""
+
+    sess = session or requests
+
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(requests.RequestException),
+    )
+    def _request() -> requests.Response:
+        return sess.get(url, timeout=10, **kwargs)
+
+    try:
+        response = _request()
+        response.raise_for_status()
+        return response
+    except requests.RequestException as exc:  # pragma: no cover - network failure path
+        raise NetworkRequestError(f"Failed to fetch {url}: {exc}") from exc
 
 @dataclass
 class ContentConfig:
@@ -105,18 +141,18 @@ class ContentResearchEngine:
     
     def _search_wikipedia(self, query: str) -> List[str]:
         """Search Wikipedia for related pages"""
+        # Use Wikipedia search API
+        search_url = f"https://en.wikipedia.org/api/rest_v1/page/search/{query}"
         try:
-            # Use Wikipedia search API
-            search_url = f"https://en.wikipedia.org/api/rest_v1/page/search/{query}"
-            response = requests.get(search_url)
-            
-            if response.status_code == 200:
-                data = response.json()
-                return [result['key'] for result in data.get('pages', [])[:3]]
-            return []
-        except Exception as e:
-            logger.error(f"Wikipedia search error: {str(e)}")
-            return []
+            response = _get_with_retry(search_url)
+            data = response.json()
+            return [result["key"] for result in data.get("pages", [])[:3]]
+        except NetworkRequestError as e:
+            logger.error(f"Wikipedia search error for '{query}': {e}")
+            raise
+        except Exception as e:  # pragma: no cover - unexpected response format
+            logger.error(f"Wikipedia search error for '{query}': {e}")
+            raise NetworkRequestError(f"Failed to parse Wikipedia response: {e}") from e
     
     def _extract_facts(self, text: str, max_sentences: int) -> List[str]:
         """Extract key facts from text"""
@@ -163,15 +199,22 @@ class ImageAssetManager:
     def get_images_for_topic(self, keywords: List[str], count: int = 5) -> List[str]:
         """Get images from free APIs based on keywords"""
         all_images = []
-        
+
         for keyword in keywords:
             # Try Pexels first (if API key available)
             if self.pexels_api_key:
-                pexels_images = self._get_pexels_images(keyword, count//len(keywords) + 1)
-                all_images.extend(pexels_images)
-            
+                try:
+                    pexels_images = self._get_pexels_images(
+                        keyword, count // len(keywords) + 1
+                    )
+                    all_images.extend(pexels_images)
+                except NetworkRequestError as e:
+                    logger.warning(f"Pexels fetch failed for '{keyword}': {e}")
+
             # Try Unsplash (source API)
-            unsplash_images = self._get_unsplash_images(keyword, count//len(keywords) + 1)
+            unsplash_images = self._get_unsplash_images(
+                keyword, count // len(keywords) + 1
+            )
             all_images.extend(unsplash_images)
             
             if len(all_images) >= count:
@@ -183,25 +226,23 @@ class ImageAssetManager:
         """Get images from Pexels API"""
         if not self.pexels_api_key:
             return []
-            
+        headers = {"Authorization": self.pexels_api_key}
+        params = {"query": query, "per_page": per_page, "orientation": "portrait"}
         try:
-            headers = {'Authorization': self.pexels_api_key}
-            params = {'query': query, 'per_page': per_page, 'orientation': 'portrait'}
-            
-            response = self.session.get(
-                'https://api.pexels.com/v1/search',
+            response = _get_with_retry(
+                "https://api.pexels.com/v1/search",
+                session=self.session,
                 headers=headers,
-                params=params
+                params=params,
             )
-            
-            if response.status_code == 200:
-                data = response.json()
-                return [photo['src']['large'] for photo in data.get('photos', [])]
-            
-        except Exception as e:
-            logger.error(f"Pexels API error: {str(e)}")
-        
-        return []
+            data = response.json()
+            return [photo["src"]["large"] for photo in data.get("photos", [])]
+        except NetworkRequestError as e:
+            logger.error(f"Pexels API error for '{query}': {e}")
+            raise
+        except Exception as e:  # pragma: no cover - unexpected response format
+            logger.error(f"Pexels API error for '{query}': {e}")
+            raise NetworkRequestError(f"Failed to parse Pexels response: {e}") from e
     
     def _get_unsplash_images(self, query: str, count: int = 5) -> List[str]:
         """Get images from Unsplash Source API (no key required)"""
@@ -219,16 +260,16 @@ class ImageAssetManager:
     def download_image(self, url: str, filepath: str) -> bool:
         """Download image from URL"""
         try:
-            response = self.session.get(url, timeout=30)
-            response.raise_for_status()
-            
-            with open(filepath, 'wb') as f:
+            response = _get_with_retry(url, session=self.session)
+            with open(filepath, "wb") as f:
                 f.write(response.content)
-            
             return True
-        except Exception as e:
-            logger.error(f"Image download error: {str(e)}")
-            return False
+        except NetworkRequestError as e:
+            logger.error(f"Image download error for {url}: {e}")
+            raise
+        except Exception as e:  # pragma: no cover - file system errors
+            logger.error(f"Image download error for {url}: {e}")
+            raise NetworkRequestError(f"Failed to save image from {url}: {e}") from e
 
 class VoiceSynthesizer:
     """Handles text-to-speech synthesis"""
@@ -506,12 +547,15 @@ class AutomatedContentSystem:
             # Step 3: Get images
             logger.info("Step 3: Sourcing images...")
             image_urls = self.image_manager.get_images_for_topic(content_data.get('images', [topic]))
-            
+
             image_paths = []
             for i, url in enumerate(image_urls):
                 img_path = self.project_root / 'media' / f'scene{i+1}.jpg'
-                if self.image_manager.download_image(url, str(img_path)):
-                    image_paths.append(str(img_path))
+                try:
+                    if self.image_manager.download_image(url, str(img_path)):
+                        image_paths.append(str(img_path))
+                except NetworkRequestError as e:
+                    logger.warning(f"Skipping image {url}: {e}")
             
             if not image_paths:
                 return False, {"error": "Failed to download images"}
