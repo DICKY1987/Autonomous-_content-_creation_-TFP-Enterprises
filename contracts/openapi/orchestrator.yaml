@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Orchestrator API
+  version: '1.0'
+paths:
+  /topics:
+    post:
+      summary: Submit a topic for processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/Topic@1.0.json'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+  /report:
+    get:
+      summary: Retrieve analytics report
+      parameters:
+        - in: query
+          name: video_id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Analytics report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  views:
+                    type: integer
+                  likes:
+                    type: integer
