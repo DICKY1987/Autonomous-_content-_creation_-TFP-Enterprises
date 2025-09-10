@@ -24,6 +24,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+import asyncio
+try:  # pragma: no cover - optional dependency
+    import aiohttp
+except ImportError:  # pragma: no cover
+    aiohttp = None
 
 # Core libraries
 import requests
@@ -155,80 +160,122 @@ class ContentResearchEngine:
 
 class ImageAssetManager:
     """Manages image sourcing from free APIs"""
-    
+
     def __init__(self, pexels_api_key: str = None):
-        self.pexels_api_key = pexels_api_key or os.getenv('PEXELS_API_KEY')
-        self.session = requests.Session()
-        
-    def get_images_for_topic(self, keywords: List[str], count: int = 5) -> List[str]:
+        self.pexels_api_key = pexels_api_key or os.getenv("PEXELS_API_KEY")
+        self._session: Optional["aiohttp.ClientSession"] = None
+        self._requests = requests.Session()
+
+    async def _get_session(self) -> Optional["aiohttp.ClientSession"]:
+        if aiohttp is None:
+            return None
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def get_images_for_topic(self, keywords: List[str], count: int = 5) -> List[str]:
         """Get images from free APIs based on keywords"""
-        all_images = []
-        
+        all_images: List[str] = []
+        tasks = []
+
         for keyword in keywords:
-            # Try Pexels first (if API key available)
             if self.pexels_api_key:
-                pexels_images = self._get_pexels_images(keyword, count//len(keywords) + 1)
-                all_images.extend(pexels_images)
-            
-            # Try Unsplash (source API)
-            unsplash_images = self._get_unsplash_images(keyword, count//len(keywords) + 1)
-            all_images.extend(unsplash_images)
-            
-            if len(all_images) >= count:
-                break
-        
+                tasks.append(self._get_pexels_images(keyword, count // len(keywords) + 1))
+            tasks.append(self._get_unsplash_images(keyword, count // len(keywords) + 1))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for res in results:
+            if isinstance(res, list):
+                all_images.extend(res)
+
         return all_images[:count]
-    
-    def _get_pexels_images(self, query: str, per_page: int = 5) -> List[str]:
+
+    async def _get_pexels_images(self, query: str, per_page: int = 5) -> List[str]:
         """Get images from Pexels API"""
         if not self.pexels_api_key:
             return []
-            
+
+        if aiohttp is None:
+            return await asyncio.to_thread(self._get_pexels_images_sync, query, per_page)
+
         try:
-            headers = {'Authorization': self.pexels_api_key}
-            params = {'query': query, 'per_page': per_page, 'orientation': 'portrait'}
-            
-            response = self.session.get(
-                'https://api.pexels.com/v1/search',
-                headers=headers,
-                params=params
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                return [photo['src']['large'] for photo in data.get('photos', [])]
-            
+            session = await self._get_session()
+            headers = {"Authorization": self.pexels_api_key}
+            params = {"query": query, "per_page": per_page, "orientation": "portrait"}
+            async with session.get(
+                "https://api.pexels.com/v1/search", headers=headers, params=params
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return [photo["src"]["large"] for photo in data.get("photos", [])]
         except Exception as e:
             logger.error(f"Pexels API error: {str(e)}")
-        
         return []
-    
-    def _get_unsplash_images(self, query: str, count: int = 5) -> List[str]:
+
+    def _get_pexels_images_sync(self, query: str, per_page: int = 5) -> List[str]:
+        if not self.pexels_api_key:
+            return []
+        try:
+            headers = {"Authorization": self.pexels_api_key}
+            params = {"query": query, "per_page": per_page, "orientation": "portrait"}
+            response = self._requests.get(
+                "https://api.pexels.com/v1/search", headers=headers, params=params
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return [photo["src"]["large"] for photo in data.get("photos", [])]
+        except Exception as e:
+            logger.error(f"Pexels API error: {str(e)}")
+        return []
+
+    async def _get_unsplash_images(self, query: str, count: int = 5) -> List[str]:
         """Get images from Unsplash Source API (no key required)"""
         try:
             images = []
             for i in range(count):
-                # Unsplash Source API provides random images by topic
                 img_url = f"https://source.unsplash.com/1080x1920/?{query.replace(' ', ',')}&{i}"
                 images.append(img_url)
             return images
         except Exception as e:
             logger.error(f"Unsplash error: {str(e)}")
             return []
-    
-    def download_image(self, url: str, filepath: str) -> bool:
+
+    async def download_image(self, url: str, filepath: str) -> bool:
         """Download image from URL"""
+        if aiohttp is None:
+            return await asyncio.to_thread(self._download_image_sync, url, filepath)
         try:
-            response = self.session.get(url, timeout=30)
-            response.raise_for_status()
-            
-            with open(filepath, 'wb') as f:
-                f.write(response.content)
-            
+            session = await self._get_session()
+            async with session.get(url, timeout=30) as response:
+                response.raise_for_status()
+                content = await response.read()
+            with open(filepath, "wb") as f:
+                f.write(content)
             return True
         except Exception as e:
             logger.error(f"Image download error: {str(e)}")
             return False
+
+    def _download_image_sync(self, url: str, filepath: str) -> bool:
+        try:
+            response = self._requests.get(url, timeout=30)
+            response.raise_for_status()
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+            return True
+        except Exception as e:
+            logger.error(f"Image download error: {str(e)}")
+            return False
+
+    async def close(self) -> None:
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    def get_images_for_topic_sync(self, keywords: List[str], count: int = 5) -> List[str]:
+        return asyncio.run(self.get_images_for_topic(keywords, count))
+
+    def download_image_sync(self, url: str, filepath: str) -> bool:
+        return asyncio.run(self.download_image(url, filepath))
 
 class VoiceSynthesizer:
     """Handles text-to-speech synthesis"""
@@ -505,12 +552,12 @@ class AutomatedContentSystem:
             
             # Step 3: Get images
             logger.info("Step 3: Sourcing images...")
-            image_urls = self.image_manager.get_images_for_topic(content_data.get('images', [topic]))
+            image_urls = self.image_manager.get_images_for_topic_sync(content_data.get('images', [topic]))
             
             image_paths = []
             for i, url in enumerate(image_urls):
                 img_path = self.project_root / 'media' / f'scene{i+1}.jpg'
-                if self.image_manager.download_image(url, str(img_path)):
+                if self.image_manager.download_image_sync(url, str(img_path)):
                     image_paths.append(str(img_path))
             
             if not image_paths:

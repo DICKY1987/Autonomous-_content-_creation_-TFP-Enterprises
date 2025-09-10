@@ -11,7 +11,8 @@ quickly and deterministically.
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Any, Awaitable, Dict, List, Tuple, Optional, Union
+import asyncio
 
 
 # ---------------------------------------------------------------------------
@@ -33,6 +34,12 @@ class QualityReport:
     copyright_status: str
     claims: List[str]
     issues: List[str]
+
+
+async def _maybe_await(result: Any):
+    if asyncio.iscoroutine(result) or isinstance(result, Awaitable):
+        return await result
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -201,34 +208,45 @@ class AutomatedContentSystem:
         self.video_engine = VideoEngine()
 
     # The public API used by tests -------------------------------------------------
-    def create_content(self, topic: str) -> Tuple[bool, Dict]:
+    async def create_content_async(self, topic: str) -> Tuple[bool, Dict]:
         data = self.research_engine.research_topic(topic)
         if "error" in data:
             return False, {"error": data["error"]}
 
         script = self._generate_script(data)
 
-        images: List[Union[ImageMeta, str]] = self.image_manager.get_images_for_topic(
+        images_result = self.image_manager.get_images_for_topic(
             data.get("images", [])
         )
+        images: List[Union[ImageMeta, str]] = await _maybe_await(images_result)
+
         image_paths: List[str] = []
         image_meta_list: List[ImageMeta] = []
-        for i, img in enumerate(images):
+
+        async def fetch(i: int, img: Union[ImageMeta, str]) -> None:
             meta = img if isinstance(img, ImageMeta) else ImageMeta(url=str(img))
             path = f"image_{i}.jpg"
-            self.image_manager.download_image(meta.url, path)
+            await _maybe_await(self.image_manager.download_image(meta.url, path))
             image_paths.append(path)
             image_meta_list.append(meta)
+
+        await asyncio.gather(*(fetch(i, img) for i, img in enumerate(images)))
         data["image_meta"] = [asdict(m) for m in image_meta_list]
 
         voice_path = "voiceover.wav"
-        if not self.voice_synthesizer.generate_voiceover(script, voice_path):
+        ok_voice = await asyncio.to_thread(
+            self.voice_synthesizer.generate_voiceover, script, voice_path
+        )
+        if not ok_voice:
             return False, {"error": "Voice synthesis failed"}
 
-        qa_report = self.qa_module.verify_content(data, script)
+        qa_report = await asyncio.to_thread(self.qa_module.verify_content, data, script)
 
         output_path = "final_video.mp4"
-        if not self.video_engine.create_video(script, image_paths, voice_path, output_path):
+        ok_video = await asyncio.to_thread(
+            self.video_engine.create_video, script, image_paths, voice_path, output_path
+        )
+        if not ok_video:
             return False, {"error": "Video assembly failed"}
 
         result = {
@@ -239,6 +257,9 @@ class AutomatedContentSystem:
             "script": script,
         }
         return True, result
+
+    def create_content(self, topic: str) -> Tuple[bool, Dict]:
+        return asyncio.run(self.create_content_async(topic))
 
     # Internal helpers -------------------------------------------------------------
     def _generate_script(self, content_data: Dict) -> str:
@@ -260,3 +281,18 @@ __all__ = [
     "CulturalSensitivityChecker",
     "QualityAssuranceModule",
 ]
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI helper
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run content generation pipeline")
+    parser.add_argument("topic", help="Topic to research")
+    args = parser.parse_args()
+
+    system = AutomatedContentSystem(ContentConfig(topic=args.topic))
+    success, result = system.create_content(args.topic)
+    if not success:
+        print(f"Error: {result.get('error')}")
+    else:
+        print(f"Content created at: {result.get('output_path')}")
