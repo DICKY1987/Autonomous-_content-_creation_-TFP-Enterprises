@@ -1,5 +1,6 @@
 import importlib
 import pytest
+from src.cloud.config_sync import load_credentials
 
 @pytest.mark.timeout(20)
 def test_research_to_script_flow(monkeypatch):
@@ -18,7 +19,8 @@ def test_research_to_script_flow(monkeypatch):
 
     # Use the system which uses research internally
     cfg = acs.ContentConfig(topic="X", duration=6.0)
-    sys = acs.AutomatedContentSystem(cfg, pexels_api_key=None)
+    creds = load_credentials(["PEXELS_API_KEY"])
+    sys = acs.AutomatedContentSystem(cfg, creds)
 
     # Monkeypatch internal research call to return our data
     monkeypatch.setattr(sys, "research_engine", research)

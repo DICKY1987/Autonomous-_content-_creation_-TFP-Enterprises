@@ -1,5 +1,6 @@
 import importlib
 import pytest
+from src.cloud.config_sync import load_credentials
 
 def test_automated_content_system_imports():
     m = importlib.import_module("src.core.automated_content_system")
@@ -13,7 +14,8 @@ def test_create_content_smoke(monkeypatch):
 
     # Force image downloads to be skipped by faking URLs and downloader
     config = ContentConfig(topic="Test", duration=5.0)
-    sys = System(config, pexels_api_key=None)
+    creds = load_credentials(["PEXELS_API_KEY"])
+    sys = System(config, creds)
 
     # Monkeypatch image manager to return a local placeholder list
     if hasattr(sys, "image_manager"):

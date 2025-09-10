@@ -154,10 +154,19 @@ class ContentResearchEngine:
         return list(set(keywords[:5]))  # Return unique keywords, limit to 5
 
 class ImageAssetManager:
-    """Manages image sourcing from free APIs"""
-    
-    def __init__(self, pexels_api_key: str = None):
-        self.pexels_api_key = pexels_api_key or os.getenv('PEXELS_API_KEY')
+    """Manages image sourcing from free APIs."""
+
+    def __init__(self, config: Optional[Dict[str, str]] = None):
+        """Create a new manager using credentials from ``config``.
+
+        Parameters
+        ----------
+        config:
+            Optional mapping containing API credentials such as
+            ``{"PEXELS_API_KEY": "..."}``.
+        """
+        self.config = config or {}
+        self.pexels_api_key = self.config.get("PEXELS_API_KEY") or self.config.get("pexels_api_key")
         self.session = requests.Session()
         
     def get_images_for_topic(self, keywords: List[str], count: int = 5) -> List[str]:
@@ -460,12 +469,12 @@ class QualityAssurance:
             return 0.5
 
 class AutomatedContentSystem:
-    """Main orchestrator for automated content creation"""
-    
-    def __init__(self, config: ContentConfig, pexels_api_key: str = None):
+    """Main orchestrator for automated content creation."""
+
+    def __init__(self, config: ContentConfig, service_config: Optional[Dict[str, str]] = None):
         self.config = config
         self.research_engine = ContentResearchEngine()
-        self.image_manager = ImageAssetManager(pexels_api_key)
+        self.image_manager = ImageAssetManager(service_config)
         self.voice_synthesizer = VoiceSynthesizer()
         self.video_engine = VideoAssemblyEngine(config)
         self.qa_module = QualityAssurance()

@@ -1,10 +1,12 @@
 import importlib, time, pytest
+from src.cloud.config_sync import load_credentials
 
 @pytest.mark.timeout(120)
 def test_single_video_under_target(monkeypatch):
     acs = importlib.import_module("src.core.automated_content_system")
     cfg = acs.ContentConfig(topic="Perf Test", duration=5.0)
-    sys = acs.AutomatedContentSystem(cfg, pexels_api_key=None)
+    creds = load_credentials(["PEXELS_API_KEY"])
+    sys = acs.AutomatedContentSystem(cfg, creds)
 
     # Mock heavy network interactions
     monkeypatch.setattr(sys.research_engine, "research_topic", lambda topic, **k: {

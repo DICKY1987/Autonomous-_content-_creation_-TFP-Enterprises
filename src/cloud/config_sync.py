@@ -7,8 +7,9 @@ that it can be reused across services.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Iterable
 import json
+import os
 
 try:  # pragma: no cover - optional dependency
     import boto3  # type: ignore
@@ -87,3 +88,38 @@ def load_config_from_parameter_store(
         except (BotoCoreError, ClientError) as exc:  # pragma: no cover - network errors
             raise RuntimeError(f"Failed to load parameter {name!r}: {exc}") from exc
     return result
+
+
+def load_credentials(
+    keys: Iterable[str], prefix: str = "/autocontent/", ssm: Optional[Any] = None
+) -> Dict[str, Optional[str]]:
+    """Retrieve secret values from Parameter Store with environment fallback.
+
+    Parameters
+    ----------
+    keys:
+        Iterable of parameter names to load. Names should match the environment
+        variable convention (e.g. ``"PEXELS_API_KEY"``).
+    prefix:
+        Parameter name prefix used in AWS. Defaults to ``"/autocontent/"``.
+    ssm:
+        Optional boto3 SSM client for testing.
+
+    Returns
+    -------
+    Dict[str, Optional[str]]
+        Mapping of requested keys to their resolved values. If a key cannot be
+        loaded from Parameter Store the value from :mod:`os.environ` is used
+        instead. Missing keys default to ``None``.
+    """
+    template = {k: None for k in keys}
+    creds: Dict[str, Optional[str]] = {k: None for k in keys}
+    try:  # pragma: no cover - network and boto3 not exercised in tests
+        loaded = load_config_from_parameter_store(template, prefix, ssm)
+        creds.update(loaded)
+    except Exception:
+        pass
+    for key in keys:
+        if not creds.get(key):
+            creds[key] = os.getenv(key)
+    return creds
