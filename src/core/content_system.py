@@ -531,63 +531,83 @@ class AutomatedContentSystem:
         for folder in folders:
             (self.project_root / folder).mkdir(parents=True, exist_ok=True)
     
-    def create_content(self, topic: str) -> Tuple[bool, Dict]:
-        """Main content creation pipeline"""
+    async def create_content_async(self, topic: str) -> Tuple[bool, Dict]:
+        """Asynchronous content creation pipeline"""
         logger.info(f"Starting content creation for topic: {topic}")
-        
+
         try:
             # Step 1: Research topic
             logger.info("Step 1: Researching topic...")
             content_data = self.research_engine.research_topic(topic)
-            
+
             if "error" in content_data:
                 return False, {"error": f"Research failed: {content_data['error']}"}
-            
+
             # Step 2: Generate script from facts
             logger.info("Step 2: Generating script...")
             script = self._generate_script(content_data)
-            
+
             with open(self.project_root / 'script' / 'script.txt', 'w') as f:
                 f.write(script)
-            
-            # Step 3: Get images
+
+            # Step 3: Get images concurrently
             logger.info("Step 3: Sourcing images...")
-            image_urls = self.image_manager.get_images_for_topic_sync(content_data.get('images', [topic]))
-            
-            image_paths = []
-            for i, url in enumerate(image_urls):
+            image_urls = await self.image_manager.get_images_for_topic(
+                content_data.get('images', [topic])
+            )
+
+            image_paths: List[str] = []
+
+            async def fetch(i: int, url: str) -> None:
                 img_path = self.project_root / 'media' / f'scene{i+1}.jpg'
-                if self.image_manager.download_image_sync(url, str(img_path)):
+                if await self.image_manager.download_image(url, str(img_path)):
                     image_paths.append(str(img_path))
-            
+
+            await asyncio.gather(
+                *(fetch(i, url) for i, url in enumerate(image_urls)),
+                return_exceptions=False,
+            )
+
             if not image_paths:
                 return False, {"error": "Failed to download images"}
-            
+
             # Step 4: Generate voiceover
             logger.info("Step 4: Generating voiceover...")
             voice_path = self.project_root / 'audio' / 'voiceover.wav'
-            
-            if not self.voice_synthesizer.generate_voiceover(script, str(voice_path)):
+
+            ok_voice = await asyncio.to_thread(
+                self.voice_synthesizer.generate_voiceover, script, str(voice_path)
+            )
+            if not ok_voice:
                 return False, {"error": "Voice synthesis failed"}
-            
+
             # Step 5: Quality assurance
             logger.info("Step 5: Quality assurance...")
-            qa_report = self.qa_module.verify_content(content_data, script)
-            
+            qa_report = await asyncio.to_thread(
+                self.qa_module.verify_content, content_data, script
+            )
+
             with open(self.project_root / 'qa' / 'facts_report.json', 'w') as f:
                 json.dump({
                     "avg_conf": qa_report.facts_confidence,
                     "claims": qa_report.claims,
                     "issues": qa_report.issues
                 }, f, indent=2)
-            
+
             # Step 6: Assemble video
             logger.info("Step 6: Assembling video...")
             output_path = self.project_root / 'build' / 'final_short.mp4'
-            
-            if not self.video_engine.create_video(script, image_paths, str(voice_path), str(output_path)):
+
+            ok_video = await asyncio.to_thread(
+                self.video_engine.create_video,
+                script,
+                image_paths,
+                str(voice_path),
+                str(output_path),
+            )
+            if not ok_video:
                 return False, {"error": "Video assembly failed"}
-            
+
             # Success!
             result = {
                 "success": True,
@@ -597,13 +617,19 @@ class AutomatedContentSystem:
                 "content_data": content_data,
                 "script": script
             }
-            
+
             logger.info(f"Content creation completed successfully: {output_path}")
             return True, result
-            
+
         except Exception as e:
             logger.error(f"Content creation failed: {str(e)}")
             return False, {"error": str(e)}
+        finally:
+            await self.image_manager.close()
+
+    def create_content(self, topic: str) -> Tuple[bool, Dict]:
+        """Synchronous wrapper for :meth:`create_content_async`"""
+        return asyncio.run(self.create_content_async(topic))
     
     def _generate_script(self, content_data: Dict) -> str:
         """Generate engaging script from research data"""
@@ -632,23 +658,18 @@ class AutomatedContentSystem:
         
         return " ".join(script_parts)
 
-# Example usage
-if __name__ == "__main__":
-    # Configuration
-    config = ContentConfig(
-        topic="Artificial Intelligence",
-        duration=30.0,
-        canvas_width=1080,
-        canvas_height=1920,
-        fps=30
-    )
-    
-    # Initialize system
+# Example CLI usage
+if __name__ == "__main__":  # pragma: no cover - manual invocation helper
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run content generation pipeline")
+    parser.add_argument("topic", help="Topic to research")
+    args = parser.parse_args()
+
+    config = ContentConfig(topic=args.topic)
     system = AutomatedContentSystem(config)
-    
-    # Create content
-    success, result = system.create_content("Leonardo da Vinci")
-    
+
+    success, result = asyncio.run(system.create_content_async(args.topic))
     if success:
         print(f"✅ Content created successfully!")
         print(f"📁 Output: {result['output_path']}")
