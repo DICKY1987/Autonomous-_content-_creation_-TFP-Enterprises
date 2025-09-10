@@ -18,12 +18,13 @@ in a background thread.  Logs are emitted to both STDOUT and a file
 named ``process_guardian.log``.
 """
 
-import logging
 import subprocess
 import threading
 import time
 from dataclasses import dataclass
 from typing import List, Optional
+
+from src.core.logging_config import get_logger
 
 
 @dataclass
@@ -40,15 +41,7 @@ class ProcessGuardian:
 
     def __init__(self, specs: List[ProcessSpec]):
         self.specs = specs
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[
-                logging.FileHandler("process_guardian.log"),
-                logging.StreamHandler(),
-            ],
-        )
-        self.log = logging.getLogger(__name__)
+        self.log = get_logger(__name__)
 
     def _monitor(self, spec: ProcessSpec) -> None:
         restarts = 0

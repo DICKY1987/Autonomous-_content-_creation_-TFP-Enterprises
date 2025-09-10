@@ -302,13 +302,10 @@ from omnichannel_implementation import OmnichannelOrchestrator
 from platform_apis import OmnichannelUploadManager
 from advanced_optimization import ABTestManager, PredictiveOptimizer
 from monitoring_analytics import RealTimeMonitor, MONITORING_CONFIG
+from src.core.logging_config import get_logger
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class CompleteOmnichannelSystem:
     """Complete integrated omnichannel content system"""

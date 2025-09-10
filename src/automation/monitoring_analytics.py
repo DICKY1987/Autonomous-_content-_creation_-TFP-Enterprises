@@ -7,7 +7,6 @@ Complete monitoring, alerting, and analytics for omnichannel content
 import asyncio
 import aiohttp
 import json
-import logging
 import time
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
@@ -24,7 +23,9 @@ import schedule
 import threading
 import os
 
-logger = logging.getLogger(__name__)
+from src.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 @dataclass
 class AlertRule:
@@ -851,10 +852,4 @@ async def main():
     print("✅ Monitoring system stopped gracefully")
 
 if __name__ == "__main__":
-    # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
     asyncio.run(main())

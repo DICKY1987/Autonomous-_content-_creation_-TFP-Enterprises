@@ -19,7 +19,6 @@ import os
 import json
 import time
 import hashlib
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -39,13 +38,10 @@ from tenacity import (
     retry_if_exception_type,
 )
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler('content_creation.log'), logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+# Setup logging using shared configuration
+logger = get_logger(__name__)
 
 
 class NetworkRequestError(Exception):
