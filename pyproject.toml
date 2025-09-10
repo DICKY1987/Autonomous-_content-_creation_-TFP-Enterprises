@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "autonomous-content-creation-tfp-enterprises"
+version = "0.1.0"
+description = "Autonomous content creation system"
+authors = ["TFP Enterprises"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiofiles = "*"
+aiohttp = "*"
+boto3 = "*"
+botocore = "*"
+edge-tts = "*"
+google-api-python-client = "*"
+google-auth-oauthlib = "*"
+gTTS = "*"
+moviepy = "*"
+numpy = "*"
+openai = "*"
+pandas = "*"
+Pillow = "*"
+plotly = "*"
+psutil = "*"
+pydantic = "*"
+requests = "*"
+schedule = "*"
+scikit-learn = "*"
+streamlit = "*"
+wikipedia = "*"
+wikipedia-api = "*"
+PyYAML = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
