@@ -1,0 +1,265 @@
+{
+  "repo": "autonomous-content-creation-tfp-enterprises",
+  "summary": {
+    "health_score": 6.2,
+    "counts": {
+      "critical": 3,
+      "high": 7,
+      "medium": 12
+    }
+  },
+  "findings": [
+    {
+      "id": "F001",
+      "domain": "structural",
+      "severity": "BLOCKER", 
+      "impact": "H",
+      "probability": "H",
+      "rpn": 45,
+      "stakeholders": ["dev", "ops", "leadership"],
+      "evidence": {
+        "path": "src/core/",
+        "lines": "multiple files",
+        "snippet": "content_system.py, automated_content_system.py, enhanced_content_system.py - duplicate implementations"
+      },
+      "description": "Multiple conflicting content system implementations causing import failures and deployment blockers",
+      "recommendation": {
+        "action": "Consolidate to single content_system.py module with clear API",
+        "effort": "M",
+        "eta_days": 3
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F002", 
+      "domain": "structural",
+      "severity": "BLOCKER",
+      "impact": "H", 
+      "probability": "H",
+      "rpn": 42,
+      "stakeholders": ["dev", "ops"],
+      "evidence": {
+        "path": "root directory",
+        "lines": "missing files", 
+        "snippet": "No requirements.txt, pyproject.toml, or setup.py in repository root"
+      },
+      "description": "Missing dependency management system prevents reproducible builds and deployment",
+      "recommendation": {
+        "action": "Create pyproject.toml with all dependencies from documentation",
+        "effort": "S",
+        "eta_days": 1
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F003",
+      "domain": "code", 
+      "severity": "BLOCKER",
+      "impact": "H",
+      "probability": "M", 
+      "rpn": 36,
+      "stakeholders": ["dev"],
+      "evidence": {
+        "path": "tests/conftest.py",
+        "lines": "8-12",
+        "snippet": "ROOT_DIR = pathlib.Path(__file__).resolve().parents[1] # Fixed import path"
+      },
+      "description": "Test import path was previously broken (parents[2] -> parents[1]), indicating systemic import issues",
+      "recommendation": {
+        "action": "Audit all import paths and create proper package structure",
+        "effort": "M", 
+        "eta_days": 5
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F004",
+      "domain": "security",
+      "severity": "MAJOR",
+      "impact": "H",
+      "probability": "M",
+      "rpn": 32,
+      "stakeholders": ["security", "dev", "leadership"],
+      "evidence": {
+        "path": "docs/setup_guide.md",
+        "lines": "34-39",
+        "snippet": "PEXELS_API_KEY=your_pexels_api_key_here\\nYOUTUBE_CREDENTIALS_PATH=youtube_credentials.json"
+      },
+      "description": "API keys stored in plain text .env files without proper secret management",
+      "recommendation": {
+        "action": "Implement secure secret management system (Kubernetes secrets or external vault)",
+        "effort": "M",
+        "eta_days": 5
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F005",
+      "domain": "ops",
+      "severity": "MAJOR", 
+      "impact": "H",
+      "probability": "M",
+      "rpn": 30,
+      "stakeholders": ["ops", "dev"],
+      "evidence": {
+        "path": "containerized architecture_TFP Enterprises.md",
+        "lines": "infrastructure section",
+        "snippet": "Docker Compose File (infra/docker-compose.yml). Include: redis, postgres, minio..."
+      },
+      "description": "Containerization plan exists but not implemented - blocking scalability",
+      "recommendation": {
+        "action": "Implement Docker containers and orchestration per existing plan",
+        "effort": "L",
+        "eta_days": 14
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F006",
+      "domain": "code",
+      "severity": "MAJOR",
+      "impact": "M", 
+      "probability": "H",
+      "rpn": 28,
+      "stakeholders": ["dev"],
+      "evidence": {
+        "path": "src/core/content_system.py",
+        "lines": "class definition",
+        "snippet": "Large monolithic class with multiple responsibilities (research, assets, voice, video, qa)"
+      },
+      "description": "Monolithic content system class violates separation of concerns, impacting maintainability",
+      "recommendation": {
+        "action": "Decompose into separate service modules per architectural plan",
+        "effort": "L",
+        "eta_days": 21
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F007",
+      "domain": "ops",
+      "severity": "MAJOR",
+      "impact": "M",
+      "probability": "H", 
+      "rpn": 25,
+      "stakeholders": ["ops", "leadership"],
+      "evidence": {
+        "path": "docs/technical_specifications.md",
+        "lines": "CI/CD section",
+        "snippet": "GitHub Actions workflow exists but not implemented in .github/workflows/"
+      },
+      "description": "Missing CI/CD pipeline prevents automated testing and deployment",
+      "recommendation": {
+        "action": "Implement GitHub Actions workflow from existing template",
+        "effort": "S",
+        "eta_days": 2
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F008",
+      "domain": "security",
+      "severity": "MAJOR",
+      "impact": "H",
+      "probability": "L",
+      "rpn": 24,
+      "stakeholders": ["security", "leadership"],
+      "evidence": {
+        "path": "docs/technical_specifications.md",
+        "lines": "copyright section",
+        "snippet": "AdvancedCopyrightChecker class exists but integration unclear"
+      },
+      "description": "Copyright compliance system not fully integrated, legal liability risk",
+      "recommendation": {
+        "action": "Integrate copyright checking into main content pipeline",
+        "effort": "M",
+        "eta_days": 7
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F009",
+      "domain": "ops", 
+      "severity": "MAJOR",
+      "impact": "M",
+      "probability": "M",
+      "rpn": 20,
+      "stakeholders": ["ops"],
+      "evidence": {
+        "path": "src/",
+        "lines": "entire codebase",
+        "snippet": "No structured logging, health checks, or observability endpoints"
+      },
+      "description": "Missing observability infrastructure impedes monitoring and debugging",
+      "recommendation": {
+        "action": "Add structured logging, health endpoints, and metrics collection",
+        "effort": "M", 
+        "eta_days": 5
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F010",
+      "domain": "code",
+      "severity": "MAJOR",
+      "impact": "M",
+      "probability": "M", 
+      "rpn": 18,
+      "stakeholders": ["dev"],
+      "evidence": {
+        "path": "tests/",
+        "lines": "test coverage",
+        "snippet": "Test infrastructure exists but coverage appears limited (~20% estimated)"
+      },
+      "description": "Insufficient test coverage increases deployment risk and regression probability",
+      "recommendation": {
+        "action": "Expand test suite to achieve 80%+ coverage",
+        "effort": "L",
+        "eta_days": 14
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F011",
+      "domain": "code",
+      "severity": "MINOR",
+      "impact": "M",
+      "probability": "L",
+      "rpn": 15,
+      "stakeholders": ["dev"],
+      "evidence": {
+        "path": "docs/AI_Youtube_BusinessPlan_Hierarchical.md",
+        "lines": "async section", 
+        "snippet": "time.sleep in A/B switching or upload pollers blocks workers"
+      },
+      "description": "Blocking synchronous operations in async contexts reduces performance",
+      "recommendation": {
+        "action": "Replace time.sleep with proper async/await patterns and Celery scheduling",
+        "effort": "M",
+        "eta_days": 3
+      },
+      "status": "observed"
+    },
+    {
+      "id": "F012",
+      "domain": "structural",
+      "severity": "MINOR", 
+      "impact": "L",
+      "probability": "H",
+      "rpn": 12,
+      "stakeholders": ["dev"],
+      "evidence": {
+        "path": "upload_system.py",
+        "lines": "1-10",
+        "snippet": "Compatibility wrapper for tests. Exposes the simplified upload system"
+      },
+      "description": "Compatibility wrappers indicate architectural inconsistencies",
+      "recommendation": {
+        "action": "Eliminate compatibility wrappers by standardizing import paths",
+        "effort": "S",
+        "eta_days": 1
+      },
+      "status": "observed"
+    }
+  ]
+}
