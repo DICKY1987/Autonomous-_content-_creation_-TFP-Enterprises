@@ -4,9 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autonomous-content-creation"
-version = "0.1.0"
+version = "0.1.1"
 description = "Autonomous Content Creation – test-friendly package layout"
-readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "TFP Enterprises" }]
@@ -27,4 +26,3 @@ full = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src", "src.*"]
-
