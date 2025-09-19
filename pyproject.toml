@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-content-creation"
+version = "0.1.0"
+description = "Autonomous Content Creation – test-friendly package layout"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "TFP Enterprises" }]
+dependencies = []
+
+[project.optional-dependencies]
+full = [
+  "moviepy>=1.0.3",
+  "wikipedia-api>=0.6.0",
+  "requests>=2.31.0",
+  "gtts>=2.3.0",
+  "google-api-python-client>=2.0",
+  "pillow>=9.5.0",
+  "fastapi>=0.100.0",
+  "celery>=5.3.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
+
