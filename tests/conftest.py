@@ -5,7 +5,8 @@ import pytest
 from contextlib import contextmanager
 
 # Ensure project root is importable when tests run from this directory
-ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
+# tests/conftest.py -> parents[1] is the repository root
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 

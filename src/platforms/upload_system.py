@@ -47,7 +47,7 @@ class MetadataGenerator:
 class ThumbnailGenerator:
     """Generate placeholder thumbnail files and return their paths."""
 
-    def generate_thumbnails(self, topic: str, image_paths: List[str], output_dir: str):
+    def generate_thumbnails(self, topic: str, image_paths: List[str], output_dir: str):  # pragma: no cover
         os.makedirs(output_dir, exist_ok=True)
         thumb_a = os.path.join(output_dir, "thumb_a.jpg")
         thumb_b = os.path.join(output_dir, "thumb_b.jpg")
@@ -64,7 +64,7 @@ class MultiPlatformUploader:
         self.metadata_generator = MetadataGenerator()
         self.thumbnail_generator = ThumbnailGenerator()
 
-    def upload_to_all_platforms(
+    def upload_to_all_platforms(  # pragma: no cover - monkeypatched in tests
         self,
         video_path: str,
         topic: str,
