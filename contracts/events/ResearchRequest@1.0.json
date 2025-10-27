@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tfp-enterprises.com/contracts/events/ResearchRequest@1.0.json",
+  "title": "ResearchRequest",
+  "type": "object",
+  "required": ["topic_id", "query"],
+  "properties": {
+    "topic_id": {"type": "string"},
+    "query": {"type": "string"}
+  }
+}
